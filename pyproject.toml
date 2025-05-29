@@ -1,0 +1,29 @@
+[project]
+name = "docparser"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "dfine", email = "dfine@nnkosmos.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "docling>=2.34.0",
+    "loguru>=0.7.3",
+    "marker-pdf>=1.7.0",
+    "pandas-stubs>=2.2.3.250527",
+    "pymupdf4llm>=0.0.24",
+    "typeric>=0.1.7",
+]
+
+[project.scripts]
+docparser = "docparser:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+]
