@@ -1,9 +1,11 @@
 from collections.abc import Generator
 from pathlib import Path
 from typing import final
+from loguru import logger
 
-from docling.datamodel.base_models import InputFormat
+from docling.datamodel.base_models import ConversionStatus, InputFormat
 from docling.datamodel.document import ConversionResult
+from docling_core.types.doc import ImageRefMode, PictureItem
 from docling.datamodel.pipeline_options import (
     EasyOcrOptions,
     PdfPipelineOptions,
@@ -11,7 +13,6 @@ from docling.datamodel.pipeline_options import (
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc.document import (
     DocItem,
-    PictureItem,
     TextItem,
 )
 from PIL.Image import Image
@@ -21,6 +22,7 @@ from docparser.types import (
     Metadata,
     ParseOpt,
     ParseOutput,
+    SavePath,
     TableElement,
     TextElement,
 )
@@ -49,10 +51,14 @@ class Parser:
 
     def _opt_process(self, opt: ParseOpt) -> PdfPipelineOptions:
         pipe_opt = PdfPipelineOptions()
-        pipe_opt.do_ocr = opt.do_ocr
-        pipe_opt.ocr_options = EasyOcrOptions()
-        pipe_opt.ocr_options.use_gpu = False
+        if opt.do_ocr:
+            pipe_opt.do_ocr = True
+            pipe_opt.ocr_options = EasyOcrOptions()
+            pipe_opt.ocr_options.use_gpu = False
+            pipe_opt.do_formula_enrichment = True
         pipe_opt.do_table_structure = True
+        pipe_opt.generate_page_images = True
+        pipe_opt.generate_picture_images = True
         pipe_opt.table_structure_options.do_cell_matching = False
         return pipe_opt
 
@@ -106,27 +112,58 @@ class Parser:
 
     def _transform(self, conv_res: ConversionResult) -> ParseOutput:
         (text, page, figure) = self._extract_body(conv_res)
+        name = conv_res.input.file.stem
         match self.opt.output_format:
             case "html":
                 tables = self._extract_table_html(conv_res)
-                html = conv_res.document.export_to_html()
+                html = conv_res.document.export_to_html(
+                    image_mode=ImageRefMode.REFERENCED
+                )
                 return ParseOutput(
-                    text=text, table=tables, figure=figure, page=page, html=html
+                    name=name,
+                    text=text,
+                    table=tables,
+                    figure=figure,
+                    page=page,
+                    html=html,
+                    save_path=SavePath(root=self.opt.save_dir)
+                    if self.opt.save_dir
+                    else None,
                 )
             case "json":
                 tables = self._extract_table_md(conv_res)
                 json = conv_res.document.export_to_dict()
                 return ParseOutput(
-                    text=text, table=tables, figure=figure, page=page, json=json
+                    name=name,
+                    text=text,
+                    table=tables,
+                    figure=figure,
+                    page=page,
+                    json=json,
+                    save_path=SavePath(root=self.opt.save_dir)
+                    if self.opt.save_dir
+                    else None,
                 )
 
             case _:
                 tables = self._extract_table_md(conv_res)
-                markdown = conv_res.document.export_to_markdown()
+                markdown = conv_res.document.export_to_markdown(
+                    image_mode=ImageRefMode.REFERENCED
+                )
                 return ParseOutput(
-                    text=text, table=tables, figure=figure, page=page, markdown=markdown
+                    name=name,
+                    text=text,
+                    table=tables,
+                    figure=figure,
+                    page=page,
+                    markdown=markdown,
+                    save_path=SavePath(root=self.opt.save_dir)
+                    if self.opt.save_dir
+                    else None,
                 )
 
     def run(self) -> Generator[ParseOutput, None, None]:
         for conv_res in self._run():
+            if conv_res.status != ConversionStatus.SUCCESS:
+                logger.error(f"failed to parse this file: {conv_res.errors}")
             yield self._transform(conv_res)

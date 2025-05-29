@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from random import choice
-from typing import Literal, final
+from typing import Literal, Self, final
 
+from loguru import logger
 from pandas import DataFrame as PdData
 from PIL.Image import Image
 
@@ -25,7 +26,7 @@ class ParseOpt:
         capbility: list[DefaultCapbility] | None = None,
         do_ocr: bool = True,
         gpu_enabled: bool = False,
-        save_dir: Path | None = None,
+        save_dir: str | None = None,
     ) -> None:
         self.source = source
         self.address = address
@@ -34,6 +35,7 @@ class ParseOpt:
         self.do_ocr = do_ocr
         self.gpu_enabled = gpu_enabled
         self.capbility = capbility if not capbility else ["text", "image", "table"]
+        self.save_dir = Path(save_dir) if save_dir else None
 
     @property
     def ok(self) -> bool:
@@ -85,8 +87,22 @@ class TextElement:
     content: str
 
 
+@dataclass
+class SavePath:
+    root: Path
+    figure: list[Path] = list()
+    page: list[Path] = list()
+    markdown: Path | None = None
+    json: Path | None = None
+    html: Path | None = None
+
+    def mkdir(self) -> None:
+        self.root.mkdir(parents=True, exist_ok=True)
+
+
 @dataclass(frozen=True)
 class ParseOutput:
+    name: str
     text: list[TextElement]
     table: list[TableElement]
     figure: list[ImageElement]
@@ -94,4 +110,33 @@ class ParseOutput:
     markdown: str | None = None
     json: dict[str, object] | None = None
     html: str | None = None
+    save_path: SavePath | None = None
     ok: bool = True
+
+    @property
+    def path(self):
+        return self.save_path
+
+    def save_figure(self) -> Self:
+        if not self.save_path:
+            logger.error("Save path has not been set!")
+            return self
+        for ind, fig in enumerate(self.figure):
+            save_path = self.save_path.root / f"{self.name}-figure-{ind}.png"
+            with open(save_path, "wb") as f:
+                fig.image.save(f, "PNG")
+            self.save_path.figure.append(save_path)
+        return self
+
+    def save_page(
+        self,
+    ) -> Self:
+        if not self.save_path:
+            logger.error("Save path has not been set!")
+            return self
+        for ind, pg in enumerate(self.page):
+            save_path = self.save_path.root / f"{self.name}-{ind}.png"
+            with open(save_path, "wb") as f:
+                pg.save(f, "PNG")
+            self.save_path.page.append(save_path)
+        return self

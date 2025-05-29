@@ -53,12 +53,20 @@ def test_parse_local_markdown():
         address=["tests/1.pdf"],
         input_format="pdf",
         output_format="markdown",
-        do_ocr=False,
+        do_ocr=True,
     )
     parser = Parser(opt)
     for result in parser.run():
         print("=== Local-Markdown Output ===")
         print(result.markdown)
+        print("=== Table===")
+        print(result.table)
+        print("=== figure===")
+        print(result.figure)
+        # print("=== text===")
+        # print(result.text)
+        print("=== page===")
+        print(result.page)
         break
 
 
@@ -93,9 +101,9 @@ def test_parse_local_json():
 
 
 if __name__ == "__main__":
-    test_parse_url_markdown()
-    test_parse_local_html()
-    test_parse_url_json()
     test_parse_local_markdown()
-    test_parse_url_html()
-    test_parse_local_json()
+    # test_parse_url_markdown()
+    # test_parse_local_html()
+    # test_parse_url_json()
+    # test_parse_url_html()
+    # test_parse_local_json()
