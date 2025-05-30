@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from docparser.types import ParseOpt, ParseOutput
+from docparser.types import CommonParseOutput, ParseOpt
 
 
 class BaseParser:
@@ -8,4 +8,4 @@ class BaseParser:
             return
         self.opt: ParseOpt = opt
 
-    def run(self) -> Generator[ParseOutput, None, None]: ...
+    def run(self) -> Generator[CommonParseOutput, None, None]: ...

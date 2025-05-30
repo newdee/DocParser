@@ -20,6 +20,7 @@ from PIL.Image import Image
 
 from docparser.base_parser import BaseParser
 from docparser.types import (
+    CommonParseOutput,
     ImageElement,
     Metadata,
     ParseOpt,
@@ -165,8 +166,48 @@ class Parser(BaseParser):
 
     @get_time_sync
     @override
-    def run(self) -> Generator[ParseOutput, None, None]:
+    def run_sp(self) -> Generator[ParseOutput, None, None]:
         for conv_res in self._run():
             if conv_res.status != ConversionStatus.SUCCESS:
                 logger.error(f"failed to parse this file: {conv_res.errors}")
             yield self._transform(conv_res)
+
+    @get_time_sync
+    @override
+    def run(self) -> Generator[CommonParseOutput, None, None]:
+        for conv_res in self._run():
+            if conv_res.status != ConversionStatus.SUCCESS:
+                logger.error(f"failed to parse this file: {conv_res.errors}")
+            save_dir = self.opt.save_dir / conv_res.input.file.stem
+            save_dir.mkdir(parents=True, exist_ok=True)
+            figure_count = 0
+            for element, _ in conv_res.document.iterate_items():
+                if isinstance(element, PictureItem):
+                    figure_count += 1
+                    with (save_dir / f"figure-{figure_count}.png").open("wb") as f:
+                        image = element.get_image(conv_res.document)
+                        if image is None:
+                            continue
+                        image.save(f, "PNG")
+            match self.opt.output_format:
+                case "html":
+                    save_path = save_dir / "output-with-image-ref.html"
+                    conv_res.document.save_as_html(
+                        save_path,
+                        image_mode=ImageRefMode.REFERENCED,
+                    )
+                case "json":
+                    save_path = save_dir / "output-with-image-ref.json"
+                    conv_res.document.save_as_json(
+                        save_path,
+                        image_mode=ImageRefMode.REFERENCED,
+                    )
+                case _:
+                    save_path = save_dir / "output-with-image-ref.md"
+                    conv_res.document.save_as_markdown(
+                        save_path,
+                        image_mode=ImageRefMode.REFERENCED,
+                    )
+            yield CommonParseOutput(
+                output_format=self.opt.output_format, output_path=save_path
+            )
