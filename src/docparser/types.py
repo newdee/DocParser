@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from multiprocessing import parent_process
 from pathlib import Path
 from random import choice
 from typing import Literal, Self, final
@@ -27,6 +28,7 @@ class ParseOpt:
         do_ocr: bool = True,
         gpu_enabled: bool = False,
         save_dir: str | None = None,
+        use_llm: bool = False,
     ) -> None:
         self.source = source
         self.address = address
@@ -36,6 +38,7 @@ class ParseOpt:
         self.gpu_enabled = gpu_enabled
         self.capbility = capbility if not capbility else ["text", "image", "table"]
         self.save_dir = Path(save_dir) if save_dir else None
+        self.use_llm = use_llm
 
     @property
     def ok(self) -> bool:
@@ -90,17 +93,22 @@ class TextElement:
 @dataclass
 class SavePath:
     root: Path
-    figure: list[Path] = list()
-    page: list[Path] = list()
+    figure: list[Path]
+    page: list[Path]
     markdown: Path | None = None
     json: Path | None = None
     html: Path | None = None
 
-    def mkdir(self) -> None:
+    def mkdir(self) -> Self:
         self.root.mkdir(parents=True, exist_ok=True)
+        return self
+
+    @staticmethod
+    def default(root: Path) -> SavePath:
+        return SavePath(root=root, figure=list(), page=list()).mkdir()
 
 
-@dataclass(frozen=True)
+@dataclass
 class ParseOutput:
     name: str
     text: list[TextElement]

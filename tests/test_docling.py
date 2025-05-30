@@ -1,5 +1,7 @@
+from pathlib import Path
 from docparser.docling import Parser
 from docparser.types import ParseOpt
+import json
 
 
 def test_parse_url_markdown():
@@ -8,12 +10,22 @@ def test_parse_url_markdown():
         address=["https://arxiv.org/pdf/2501.17887"],
         input_format="pdf",
         output_format="markdown",
-        do_ocr=False,
+        save_dir="./output",
+        do_ocr=True,
     )
     parser = Parser(opt)
     for result in parser.run():
         print("=== URL-Markdown Output ===")
         print(result.markdown)
+        print("=== figure===")
+        print(result.figure)
+        # print("=== text===")
+        # print(result.text)
+        print("=== page===")
+        print(result.page)
+        print("=== page===")
+        print(result.path)
+        _ = result.save_page().save_figure()
         break
 
 
@@ -54,6 +66,7 @@ def test_parse_local_markdown():
         input_format="pdf",
         output_format="markdown",
         do_ocr=True,
+        save_dir="./output",
     )
     parser = Parser(opt)
     for result in parser.run():
@@ -67,6 +80,9 @@ def test_parse_local_markdown():
         # print(result.text)
         print("=== page===")
         print(result.page)
+        print("=== page===")
+        print(result.path)
+        _ = result.save_page().save_figure()
         break
 
 
@@ -96,13 +112,15 @@ def test_parse_local_json():
     parser = Parser(opt)
     for result in parser.run():
         print("=== Local-JSON Output ===")
-        print(result.json)
+        # print(json.dumps(result.json))
+        with open("tests/1.json", "w") as f:
+            json.dump(result.json, f)
         break
 
 
 if __name__ == "__main__":
-    test_parse_local_markdown()
-    # test_parse_url_markdown()
+    # test_parse_local_markdown()
+    test_parse_url_markdown()
     # test_parse_local_html()
     # test_parse_url_json()
     # test_parse_url_html()

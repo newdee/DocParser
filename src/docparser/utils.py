@@ -1,9 +1,11 @@
 from collections.abc import Callable, Awaitable
 from functools import wraps
+from io import BytesIO
 from time import perf_counter
 from typing import ParamSpec, TypeVar
 from loguru import logger
 from pathlib import Path
+from typeric.result import resulty
 import requests
 
 
@@ -18,6 +20,13 @@ def is_valid_url(address: list[str]) -> bool:
     except Exception as e:
         logger.error(e)
         return False
+
+
+@resulty
+def download(addr: str) -> BytesIO:
+    resp = requests.get(addr)
+    resp.raise_for_status()
+    return BytesIO(resp.content)
 
 
 def is_valid_path(address: list[str]) -> bool:

@@ -1,11 +1,12 @@
 from collections.abc import Generator
 from pathlib import Path
-from typing import final
+from typing import final, override
 from loguru import logger
 
 from docling.datamodel.base_models import ConversionStatus, InputFormat
 from docling.datamodel.document import ConversionResult
-from docling_core.types.doc import ImageRefMode, PictureItem
+from docling_core.types.doc.document import PictureItem
+from docling_core.types.doc.base import ImageRefMode
 from docling.datamodel.pipeline_options import (
     EasyOcrOptions,
     PdfPipelineOptions,
@@ -17,6 +18,7 @@ from docling_core.types.doc.document import (
 )
 from PIL.Image import Image
 
+from docparser.base_parser import BaseParser
 from docparser.types import (
     ImageElement,
     Metadata,
@@ -26,14 +28,13 @@ from docparser.types import (
     TableElement,
     TextElement,
 )
+from docparser.utils import get_time_sync
 
 
 @final
-class Parser:
+class Parser(BaseParser):
     def __init__(self, opt: ParseOpt) -> None:
-        if not opt.ok:
-            return
-        self.opt = opt
+        super().__init__(opt)
         self._convert = DocumentConverter(
             allowed_formats=[InputFormat.PDF],
             format_options={
@@ -95,14 +96,14 @@ class Parser:
     def _extract_table_md(self, conv_res: ConversionResult) -> list[TableElement]:
         tables: list[TableElement] = list()
         for tb in conv_res.document.tables:
-            table = tb.export_to_markdown()
+            table = tb.export_to_markdown(conv_res.document)
             tables.append(TableElement(metadata=self._to_metadata(tb), markdown=table))
         return tables
 
     def _extract_table_html(self, conv_res: ConversionResult) -> list[TableElement]:
         tables: list[TableElement] = list()
         for tb in conv_res.document.tables:
-            table = tb.export_to_html()
+            table = tb.export_to_html(conv_res.document)
             page_no, bbox = (tb.prov[0].page_no, tb.prov[0].bbox)
             bbox = (bbox.l, bbox.t, bbox.r, bbox.b)
             tables.append(
@@ -126,7 +127,7 @@ class Parser:
                     figure=figure,
                     page=page,
                     html=html,
-                    save_path=SavePath(root=self.opt.save_dir)
+                    save_path=SavePath.default(root=self.opt.save_dir)
                     if self.opt.save_dir
                     else None,
                 )
@@ -140,7 +141,7 @@ class Parser:
                     figure=figure,
                     page=page,
                     json=json,
-                    save_path=SavePath(root=self.opt.save_dir)
+                    save_path=SavePath.default(root=self.opt.save_dir)
                     if self.opt.save_dir
                     else None,
                 )
@@ -157,11 +158,13 @@ class Parser:
                     figure=figure,
                     page=page,
                     markdown=markdown,
-                    save_path=SavePath(root=self.opt.save_dir)
+                    save_path=SavePath.default(root=self.opt.save_dir)
                     if self.opt.save_dir
                     else None,
                 )
 
+    @get_time_sync
+    @override
     def run(self) -> Generator[ParseOutput, None, None]:
         for conv_res in self._run():
             if conv_res.status != ConversionStatus.SUCCESS:
