@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from multiprocessing import parent_process
 from pathlib import Path
 from random import choice
 from typing import Literal, Self, final
@@ -24,10 +23,10 @@ class ParseOpt:
         address: list[str],
         input_format: Literal["pdf"],
         output_format: Literal["markdown", "json", "html"],
+        save_dir: str,
         capbility: list[DefaultCapbility] | None = None,
         do_ocr: bool = True,
         gpu_enabled: bool = False,
-        save_dir: str | None = None,
         use_llm: bool = False,
     ) -> None:
         self.source = source
@@ -37,7 +36,7 @@ class ParseOpt:
         self.do_ocr = do_ocr
         self.gpu_enabled = gpu_enabled
         self.capbility = capbility if not capbility else ["text", "image", "table"]
-        self.save_dir = Path(save_dir) if save_dir else None
+        self.save_dir = Path(save_dir)
         self.use_llm = use_llm
 
     @property
@@ -148,3 +147,9 @@ class ParseOutput:
                 pg.save(f, "PNG")
             self.save_path.page.append(save_path)
         return self
+
+
+@dataclass
+class CommonParseOutput:
+    output_format: str
+    output_path: Path

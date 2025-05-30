@@ -1,11 +1,13 @@
 from collections.abc import Callable, Awaitable
 from functools import wraps
 from io import BytesIO
+import re
 from time import perf_counter
 from typing import ParamSpec, TypeVar
 from loguru import logger
 from pathlib import Path
 from typeric.result import resulty
+from urllib.parse import urlparse, quote
 import requests
 
 
@@ -23,10 +25,17 @@ def is_valid_url(address: list[str]) -> bool:
 
 
 @resulty
-def download(addr: str) -> BytesIO:
+def download_pdf(addr: str) -> tuple[str, BytesIO]:
     resp = requests.get(addr)
     resp.raise_for_status()
-    return BytesIO(resp.content)
+    cd = resp.headers.get("Content-Disposition")
+    if cd:
+        fname = re.findall('filename="?([^"]+)"?', cd)
+        if fname:
+            return (fname[0], BytesIO(resp.content))
+    path = urlparse(addr).path
+
+    return (quote(path.split("/")[-1]), BytesIO(resp.content))
 
 
 def is_valid_path(address: list[str]) -> bool:
