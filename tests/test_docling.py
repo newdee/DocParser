@@ -125,8 +125,8 @@ def test_parse_local_json():
 
 
 if __name__ == "__main__":
-    # test_parse_local_markdown_with_docling()
-    test_parse_local_markdown_with_marker()
+    test_parse_local_markdown_with_docling()
+    # test_parse_local_markdown_with_marker()
     # test_parse_url_markdown()
     # test_parse_local_html()
     # test_parse_url_json()

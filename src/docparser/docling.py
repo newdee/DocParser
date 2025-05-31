@@ -180,15 +180,15 @@ class Parser(BaseParser):
                 logger.error(f"failed to parse this file: {conv_res.errors}")
             save_dir = self.opt.save_dir / conv_res.input.file.stem
             save_dir.mkdir(parents=True, exist_ok=True)
-            figure_count = 0
-            for element, _ in conv_res.document.iterate_items():
-                if isinstance(element, PictureItem):
-                    figure_count += 1
-                    with (save_dir / f"figure-{figure_count}.png").open("wb") as f:
-                        image = element.get_image(conv_res.document)
-                        if image is None:
-                            continue
-                        image.save(f, "PNG")
+            # figure_count = 0
+            # for element, _ in conv_res.document.iterate_items():
+            #     if isinstance(element, PictureItem):
+            #         figure_count += 1
+            #         with (save_dir / f"figure-{figure_count}.png").open("wb") as f:
+            #             image = element.get_image(conv_res.document)
+            #             if image is None:
+            #                 continue
+            #             image.save(f, "PNG")
             match self.opt.output_format:
                 case "html":
                     save_path = save_dir / "output-with-image-ref.html"

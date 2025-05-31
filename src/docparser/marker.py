@@ -57,10 +57,10 @@ class Parser(BaseParser):
             for img_name, img in images.items():
                 img = convert_if_not_rgb(img)  # RGBA images can't save as JPG
                 img.save(output_dir / img_name, "PNG")
-                yield CommonParseOutput(
-                    output_format=self.opt.output_format,
-                    output_path=output_dir / f"output.{ext}",
-                )
+            yield CommonParseOutput(
+                output_format=self.opt.output_format,
+                output_path=output_dir / f"output.{ext}",
+            )
 
     @get_time_sync
     @override
