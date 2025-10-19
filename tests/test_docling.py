@@ -1,6 +1,7 @@
+import json
+
 from docparser import docling, marker
 from docparser.types import ParseOpt
-import json
 
 
 def test_parse_local_markdown_with_docling():
@@ -8,7 +9,7 @@ def test_parse_local_markdown_with_docling():
         source="local",
         address=["tests/1.pdf"],
         input_format="pdf",
-        output_format="markdown",
+        output_format="json",
         do_ocr=True,
         save_dir="./output",
     )
@@ -23,7 +24,7 @@ def test_parse_local_markdown_with_marker():
         source="local",
         address=["tests/1.pdf"],
         input_format="pdf",
-        output_format="markdown",
+        output_format="json",
         do_ocr=True,
         save_dir="./output",
     )
@@ -126,7 +127,7 @@ def test_parse_local_json():
 
 if __name__ == "__main__":
     test_parse_local_markdown_with_docling()
-    # test_parse_local_markdown_with_marker()
+    test_parse_local_markdown_with_marker()
     # test_parse_url_markdown()
     # test_parse_local_html()
     # test_parse_url_json()

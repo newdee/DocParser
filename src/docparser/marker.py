@@ -1,17 +1,16 @@
 import json
 from collections.abc import Generator
 from pathlib import Path
-from typing import cast, final, override
+from typing import final, override
 
 from loguru import logger
 from marker.config.parser import ConfigParser
 from marker.converters.pdf import PdfConverter
 from marker.models import create_model_dict
 from marker.output import convert_if_not_rgb, text_from_rendered
-from pydantic import BaseModel
 
 from docparser.base_parser import BaseParser
-from docparser.types import CommonParseOutput, ParseOpt, ParseOutput
+from docparser.types import CommonParseOutput, ParseOpt
 from docparser.utils import download_pdf, get_time_sync
 
 
