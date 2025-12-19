@@ -1,14 +1,15 @@
-from collections.abc import Callable, Awaitable
+import re
+from collections.abc import Awaitable, Callable
 from functools import wraps
 from io import BytesIO
-import re
+from pathlib import Path
 from time import perf_counter
 from typing import ParamSpec, TypeVar
-from loguru import logger
-from pathlib import Path
-from typeric.result import resulty
-from urllib.parse import urlparse, quote
+from urllib.parse import quote, urlparse
+
 import requests
+from loguru import logger
+from typeric.result import resulty
 
 
 def is_valid_url(address: list[str]) -> bool:
@@ -17,6 +18,7 @@ def is_valid_url(address: list[str]) -> bool:
             response = requests.head(addr)
             logger.info(f"{response.status_code = }")
             if response.status_code < 200 or response.status_code >= 400:
+                logger.error(f"Invalid file {address}")
                 return False
         return True
     except Exception as e:
@@ -43,6 +45,7 @@ def is_valid_path(address: list[str]) -> bool:
         for addr in address:
             path = Path(addr)
             if not path.exists():
+                logger.error(f"File {address} not exist")
                 return False
         return True
     except Exception as e:
